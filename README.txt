@@ -1,4 +1,4 @@
-SISTEMA DE PRECIOS WEB - Marcas destacadas
+rSISTEMA DE PRECIOS WEB - Marcas destacadas
 
 Esta versión agrega:
 - Carrusel automático de Marcas destacadas para trabajadores, sin flechas.
@@ -20,3 +20,4 @@ La tabla marcas_destacadas guarda nombre, categoría, imagen, orden y estado de 
 Las imágenes cargadas desde el equipo se reducen para el uso web y se guardan como PNG dentro de imagen_url. Para quitar fondo de una imagen URL externa, el servidor externo debe permitir CORS; si no lo permite, descarga la imagen y súbela desde el equipo.
 
 Supabase se mantiene en el mismo proyecto configurado en config.js.
+Actualización del sistema.
