@@ -72,6 +72,7 @@
       <nav class="nav">
         <button class="nav-item active" data-section="catalogo">▦ <span>Catálogo</span></button>
         <button class="nav-item admin-only" data-section="productos">＋ <span>Productos</span></button>
+        <button class="nav-item admin-only" data-section="marcas">★ <span>Marcas destacadas</span></button>
         <button class="nav-item admin-only" data-section="usuarios">♙ <span>Usuarios</span></button>
       </nav>
 
@@ -193,6 +194,31 @@ Cielo Tallarín | Fideos | Paquete de 10 kg | Cantidad: 20 | Precio por unidad: 
             </table>
           </div>
         </div>
+      </section>
+
+      <section id="marcasSection" class="section hidden">
+        <div class="admin-banner brand-admin-banner"><div><span class="admin-kicker">PANEL ADMINISTRADOR</span><h2>Marcas destacadas</h2><p>Estas marcas se muestran únicamente en el catálogo de trabajadores, en un carrusel automático.</p></div><div class="admin-avatar">★</div></div>
+        <div class="brand-admin-toolbar">
+          <div><strong>Administrar marcas</strong><span>Agrega, edita, elimina y ordena los cuadritos que verán los trabajadores.</span></div>
+          <div class="brand-admin-actions"><label class="switch-label"><input id="featuredBrandsEnabled" type="checkbox" checked><span class="switch"></span> Mostrar en catálogo</label><button id="addBrandBtn" class="btn btn-primary" type="button">＋ Agregar marca</button></div>
+        </div>
+        <div id="brandAdminGrid" class="brand-admin-grid"></div>
+        <div class="brand-editor-card">
+          <div class="brand-editor-head"><div><span class="admin-kicker">EDITOR DE IMAGEN</span><h3 id="brandEditorTitle">Selecciona una marca</h3><p>Sube un logo y usa <strong>Quitar fondo</strong> para dejarlo transparente.</p></div><span class="transparent-badge">PNG transparente recomendado</span></div>
+          <div class="brand-editor-body">
+            <div class="brand-image-stage" id="brandImageStage"><div class="brand-image-empty">🖼<span>Selecciona una marca</span></div></div>
+            <div class="brand-editor-controls">
+              <div class="field"><label>Nombre de la marca</label><input id="brandNameInput" placeholder="Ej. Marsella"></div>
+              <div class="field"><label>Categoría / enlace</label><input id="brandCategoryInput" placeholder="Ej. Detergentes"></div>
+              <div class="field"><label>Imagen URL (opcional)</label><input id="brandImageUrlInput" placeholder="https://.../logo.png"></div>
+              <div class="brand-editor-buttons"><button id="brandChangeImageBtn" class="small-btn" type="button">▧ Cambiar imagen</button><button id="brandRemoveBgBtn" class="small-btn brand-magic" type="button">✦ Quitar fondo</button><button id="brandRotateBtn" class="small-btn" type="button">↻ Rotar</button><button id="brandDeleteBtn" class="small-btn danger" type="button">▣ Eliminar marca</button></div>
+              <input id="brandImageFile" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+              <div id="brandEditorStatus" class="brand-editor-status">Selecciona una tarjeta para editarla.</div>
+            </div>
+          </div>
+        </div>
+        <div class="brand-worker-preview"><div class="section-head"><div><h3>Vista previa — trabajadores</h3><p class="muted">Así se verá: desplazamiento automático de izquierda a derecha y repetición continua, sin flechas.</p></div></div><div class="worker-brand-strip"><div id="workerBrandTrack" class="worker-brand-track"></div></div></div>
+        <div class="brand-admin-footer"><button id="saveBrandsBtn" class="btn btn-primary" type="button">▣ Guardar cambios</button><span>Los trabajadores verán estos cambios después de guardar.</span></div>
       </section>
 
       <section id="usuariosSection" class="section hidden">

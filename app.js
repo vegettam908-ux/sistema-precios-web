@@ -3,6 +3,9 @@ const CONFIG = window.SISTEMA_CONFIG || { demoMode:true, supabaseUrl:"", supabas
 const state = {
   products: [],
   users: [],
+  featuredBrands: [],
+  featuredBrandsEnabled: true,
+  selectedFeaturedBrandId: null,
   currentUser: null,
   selectedCategory: "",
   search: "",
@@ -20,6 +23,17 @@ const demoUsers = [
 const demoProducts = [
   {id:1,categoria:"Abarrotes",nombre:"Arroz",precio_unidad:4.50,precios_mayor:[{Presentacion:"SIX",Precio:25},{Presentacion:"Docena",Precio:48},{Presentacion:"Paquete",Precio:110}],precio_mercado:5,precio_publico:5.50,imagen_url:""},
   {id:2,categoria:"Abarrotes",nombre:"Azúcar",precio_unidad:4.20,precios_mayor:[{Presentacion:"SIX",Precio:24},{Presentacion:"Docena",Precio:46},{Presentacion:"Paquete",Precio:105}],precio_mercado:4.80,precio_publico:5.20,imagen_url:""}
+];
+
+
+const defaultFeaturedBrands = [
+  {id:"demo-1",nombre:"Marsella",categoria:"Detergentes",imagen_url:"",orden:1,activo:true},
+  {id:"demo-2",nombre:"Opal",categoria:"Detergentes",imagen_url:"",orden:2,activo:true},
+  {id:"demo-3",nombre:"Bolívar",categoria:"Detergentes",imagen_url:"",orden:3,activo:true},
+  {id:"demo-4",nombre:"Ace",categoria:"Detergentes",imagen_url:"",orden:4,activo:true},
+  {id:"demo-5",nombre:"Ariel",categoria:"Detergentes",imagen_url:"",orden:5,activo:true},
+  {id:"demo-6",nombre:"Doff",categoria:"Detergentes",imagen_url:"",orden:6,activo:true},
+  {id:"demo-7",nombre:"Patito",categoria:"Detergentes",imagen_url:"",orden:7,activo:true}
 ];
 
 const $ = id => document.getElementById(id);
@@ -54,6 +68,7 @@ function bindEvents() {
   $("generateImportBtn").onclick = generateImportPreview;
   $("addPresentationBtn").onclick = () => addPresentationRow();
   $("productForm").addEventListener("submit", saveProduct);
+  bindFeaturedBrandEvents();
   bindImageEditor();
   document.querySelectorAll("[data-close-modal]").forEach(el => el.addEventListener("click", closeProductModal));
   document.querySelectorAll(".nav-item").forEach(btn => btn.addEventListener("click", () => switchSection(btn.dataset.section)));
@@ -141,10 +156,11 @@ async function loadData() {
     state.products = CONFIG.demoMode ? [...demoProducts] : await supabaseGet("productos", "select=*");
     state.products = state.products.map(normalizeProduct);
     if (isAdmin()) state.users = CONFIG.demoMode ? [...demoUsers] : await supabaseGet("usuarios", "select=*");
+    if (isAdmin()) await loadFeaturedBrands();
     buildCategories();
     buildPriceFilter();
     renderCatalog();
-    if (isAdmin()) { renderUsers(); renderProductTable(); }
+    if (isAdmin()) { renderUsers(); renderProductTable(); renderFeaturedBrandsAdmin(); }
   } catch (err) {
     console.error(err);
     toast("No se pudieron cargar los datos de Supabase.");
@@ -234,6 +250,14 @@ function getBrandsForCategory() {
 }
 function renderBrandStrip() {
   const brands = getBrandsForCategory();
+  const featured = state.featuredBrands.filter(b=>b.activo!==false).sort((a,b)=>Number(a.orden||0)-Number(b.orden||0));
+  const useFeatured = state.featuredBrandsEnabled && featured.length > 0;
+  if (useFeatured) {
+    const items = featured.slice(0,8);
+    $("brandStrip").innerHTML = `<div class="brand-strip-featured-title">Marcas destacadas</div><div class="brand-strip-viewport"><div class="brand-strip-track">${items.map(b=>brandWorkerCard(b)).join("")}${items.map(b=>brandWorkerCard(b,true)).join("")}</div></div>`;
+    document.querySelectorAll(".featured-brand-pill").forEach(btn => btn.onclick = () => { state.selectedBrand = btn.dataset.brand || ""; state.catalogPage=1; renderCatalog(); });
+    return;
+  }
   $("brandStrip").innerHTML = brands.map(b => `<button type="button" class="brand-pill ${state.selectedBrand===b || (!state.selectedBrand && b==="Todas") ? "active" : ""}" data-brand="${escapeAttr(b)}">${escapeHtml(b)}</button>`).join("");
   document.querySelectorAll(".brand-pill").forEach(btn => btn.onclick = () => {
     state.selectedBrand = btn.dataset.brand === "Todas" ? "" : btn.dataset.brand;
@@ -242,6 +266,67 @@ function renderBrandStrip() {
     renderCatalog();
   });
 }
+function brandWorkerCard(b, duplicate=false){
+  const img=b.imagen_url ? `<img src="${escapeAttr(b.imagen_url)}" alt="${escapeAttr(b.nombre)}">` : `<span class="brand-fallback">${escapeHtml(String(b.nombre||"M").slice(0,1).toUpperCase())}</span>`;
+  return `<button type="button" class="featured-brand-pill" data-brand="${escapeAttr(b.nombre)}" aria-label="Ver ${escapeAttr(b.nombre)}" tabindex="${duplicate?'-1':'0'}">${img}<strong>${escapeHtml(b.nombre)}</strong></button>`;
+}
+
+async function loadFeaturedBrands(){
+  if(CONFIG.demoMode){ state.featuredBrands=[...defaultFeaturedBrands]; state.featuredBrandsEnabled=true; return; }
+  try{
+    const rows=await supabaseGet("marcas_destacadas","select=*&order=orden.asc");
+    state.featuredBrands=rows.map(x=>({...x,orden:Number(x.orden||0),activo:x.activo!==false}));
+    state.featuredBrandsEnabled=state.featuredBrands.length>0 && state.featuredBrands.some(x=>x.activo!==false);
+  }catch(err){
+    console.warn("No existe aún la tabla marcas_destacadas o no hay permisos.",err);
+    state.featuredBrands=[]; state.featuredBrandsEnabled=false;
+  }
+}
+
+function bindFeaturedBrandEvents(){
+  const add=$("addBrandBtn"); if(add) add.onclick=()=>{const next=state.featuredBrands.reduce((m,b)=>Math.max(m,Number(b.orden||0)),0)+1;const b={id:"new-"+Date.now(),nombre:"Nueva marca",categoria:"",imagen_url:"",orden:next,activo:true,_new:true};state.featuredBrands.push(b);selectFeaturedBrand(b.id);renderFeaturedBrandsAdmin();};
+  const save=$("saveBrandsBtn"); if(save) save.onclick=saveFeaturedBrands;
+  const enabled=$("featuredBrandsEnabled"); if(enabled) enabled.onchange=()=>{state.featuredBrandsEnabled=enabled.checked;renderWorkerBrandPreview();};
+  const change=$("brandChangeImageBtn"); if(change) change.onclick=()=>$("brandImageFile").click();
+  const file=$("brandImageFile"); if(file) file.onchange=handleFeaturedBrandImageFile;
+  const url=$("brandImageUrlInput"); if(url) url.oninput=()=>{const b=getSelectedFeaturedBrand();if(!b)return;b.imagen_url=url.value.trim();renderBrandAdminCardImages();renderFeaturedBrandEditor();renderWorkerBrandPreview();};
+  const name=$("brandNameInput"); if(name) name.oninput=()=>{const b=getSelectedFeaturedBrand();if(!b)return;b.nombre=name.value.trim()||"Nueva marca";renderBrandAdminCardImages();renderWorkerBrandPreview();};
+  const cat=$("brandCategoryInput"); if(cat) cat.oninput=()=>{const b=getSelectedFeaturedBrand();if(b)b.categoria=cat.value.trim();};
+  const rm=$("brandRemoveBgBtn"); if(rm) rm.onclick=()=>transformFeaturedBrandImage("removebg");
+  const rot=$("brandRotateBtn"); if(rot) rot.onclick=()=>transformFeaturedBrandImage("rotate");
+  const del=$("brandDeleteBtn"); if(del) del.onclick=deleteSelectedFeaturedBrand;
+}
+function getSelectedFeaturedBrand(){return state.featuredBrands.find(b=>String(b.id)===String(state.selectedFeaturedBrandId));}
+function selectFeaturedBrand(id){state.selectedFeaturedBrandId=id;renderFeaturedBrandEditor();}
+function renderFeaturedBrandsAdmin(){
+  const grid=$("brandAdminGrid");if(!grid)return;
+  const brands=[...state.featuredBrands].sort((a,b)=>Number(a.orden||0)-Number(b.orden||0));
+  grid.innerHTML=brands.map((b,i)=>`<article class="brand-admin-card ${String(b.id)===String(state.selectedFeaturedBrandId)?'selected':''}" data-id="${escapeAttr(b.id)}"><button class="brand-drag" type="button" title="Seleccionar">⠿</button><button class="brand-card-delete" type="button" title="Eliminar">×</button><div class="brand-card-image">${b.imagen_url?`<img src="${escapeAttr(b.imagen_url)}" alt="">`:`<span>${escapeHtml(String(b.nombre||"M").slice(0,1).toUpperCase())}</span>`}</div><label>Marca<input class="brand-card-name" value="${escapeAttr(b.nombre||"")}"></label><label>Categoría<input class="brand-card-cat" value="${escapeAttr(b.categoria||"")}" placeholder="Ej. Detergentes"></label><label>Orden<input class="brand-card-order" type="number" min="1" value="${Number(b.orden||i+1)}"></label><button class="small-btn" type="button">✎ Editar imagen</button><button class="small-btn brand-magic" type="button">✦ Quitar fondo</button></article>`).join("");
+  grid.querySelectorAll(".brand-admin-card").forEach(card=>{
+    const id=card.dataset.id,b=state.featuredBrands.find(x=>String(x.id)===id);if(!b)return;
+    card.onclick=e=>{if(e.target.matches("input,button"))return;selectFeaturedBrand(id);renderFeaturedBrandsAdmin();};
+    card.querySelector(".brand-card-delete").onclick=e=>{e.stopPropagation();state.selectedFeaturedBrandId=id;deleteSelectedFeaturedBrand();};
+    card.querySelector(".brand-card-name").oninput=e=>{b.nombre=e.target.value;renderWorkerBrandPreview();};
+    card.querySelector(".brand-card-cat").oninput=e=>b.categoria=e.target.value;
+    card.querySelector(".brand-card-order").oninput=e=>{b.orden=Number(e.target.value)||1;renderWorkerBrandPreview();};
+    card.querySelectorAll(".small-btn")[0].onclick=e=>{e.stopPropagation();selectFeaturedBrand(id);$("brandImageFile").click();};
+    card.querySelectorAll(".small-btn")[1].onclick=e=>{e.stopPropagation();selectFeaturedBrand(id);transformFeaturedBrandImage("removebg");};
+  });
+  renderBrandAdminCardImages();renderFeaturedBrandEditor();renderWorkerBrandPreview();
+}
+function renderBrandAdminCardImages(){document.querySelectorAll(".brand-admin-card").forEach(card=>{const b=state.featuredBrands.find(x=>String(x.id)===card.dataset.id);if(!b)return;const box=card.querySelector(".brand-card-image");box.innerHTML=b.imagen_url?`<img src="${escapeAttr(b.imagen_url)}" alt="">`:`<span>${escapeHtml(String(b.nombre||"M").slice(0,1).toUpperCase())}</span>`;});}
+function renderFeaturedBrandEditor(){
+  const b=getSelectedFeaturedBrand();if(!b){$("brandEditorTitle").textContent="Selecciona una marca";$("brandImageStage").innerHTML='<div class="brand-image-empty">🖼<span>Selecciona una marca</span></div>';return;}
+  $("brandEditorTitle").textContent=b.nombre||"Nueva marca";$("brandNameInput").value=b.nombre||"";$("brandCategoryInput").value=b.categoria||"";$("brandImageUrlInput").value=(b.imagen_url||"").startsWith("data:")?"":(b.imagen_url||"");
+  $("brandImageStage").innerHTML=b.imagen_url?`<img src="${escapeAttr(b.imagen_url)}" alt="${escapeAttr(b.nombre)}">`:'<div class="brand-image-empty">🖼<span>Sin imagen</span></div>';
+  $("brandEditorStatus").textContent=b.imagen_url?"Imagen lista. Puedes quitar el fondo y guardar.":"Sube un logo o pega una URL.";
+}
+function handleFeaturedBrandImageFile(e){const file=e.target.files?.[0];if(!file)return;if(file.size>2*1024*1024){toast("La imagen supera los 2 MB.");e.target.value="";return;}if(!/^image\/(png|jpeg|webp)$/.test(file.type)){toast("Usa JPG, PNG o WEBP.");e.target.value="";return;}const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{const maxW=900,maxH=450,scale=Math.min(1,maxW/img.naturalWidth,maxH/img.naturalHeight);const c=document.createElement("canvas");c.width=Math.max(1,Math.round(img.naturalWidth*scale));c.height=Math.max(1,Math.round(img.naturalHeight*scale));c.getContext("2d").drawImage(img,0,0,c.width,c.height);const b=getSelectedFeaturedBrand();if(!b)return;b.imagen_url=c.toDataURL("image/png");renderFeaturedBrandEditor();renderBrandAdminCardImages();renderWorkerBrandPreview();};img.src=r.result;};r.readAsDataURL(file);e.target.value="";}
+function transformFeaturedBrandImage(mode){const b=getSelectedFeaturedBrand();if(!b||!b.imagen_url)return toast("Primero selecciona una marca con imagen.");const img=new Image();img.onload=()=>{const w=img.naturalWidth,h=img.naturalHeight;const canvas=document.createElement("canvas");if(mode==="rotate"){canvas.width=h;canvas.height=w;const ctx=canvas.getContext("2d");ctx.translate(h/2,w/2);ctx.rotate(Math.PI/2);ctx.drawImage(img,-w/2,-h/2);}else{canvas.width=w;canvas.height=h;const ctx=canvas.getContext("2d");ctx.drawImage(img,0,0);const data=ctx.getImageData(0,0,w,h),d=data.data;const corners=[[0,0],[w-1,0],[0,h-1],[w-1,h-1]].map(([x,y])=>{const i=(y*w+x)*4;return[d[i],d[i+1],d[i+2]]});const avg=corners.reduce((a,c)=>a.map((v,i)=>v+c[i]/corners.length),[0,0,0]);const tol=42,seen=new Uint8Array(w*h),q=[];const push=(x,y)=>{if(x<0||y<0||x>=w||y>=h)return;const k=y*w+x;if(seen[k])return;const i=k*4;if(Math.hypot(d[i]-avg[0],d[i+1]-avg[1],d[i+2]-avg[2])<=tol){seen[k]=1;q.push(k);}};for(let x=0;x<w;x++){push(x,0);push(x,h-1);}for(let y=0;y<h;y++){push(0,y);push(w-1,y);}for(let qi=0;qi<q.length;qi++){const k=q[qi],x=k%w,y=(k/w)|0,i=k*4;d[i+3]=0;push(x+1,y);push(x-1,y);push(x,y+1);push(x,y-1);}ctx.putImageData(data,0,0);}b.imagen_url=canvas.toDataURL("image/png");renderFeaturedBrandEditor();renderBrandAdminCardImages();renderWorkerBrandPreview();toast(mode==="removebg"?"Fondo eliminado correctamente.":"Imagen girada.");};img.onerror=()=>toast("No se pudo editar la imagen. Sube el archivo desde tu PC para quitar el fondo.");img.crossOrigin="anonymous";img.src=b.imagen_url;}
+function deleteSelectedFeaturedBrand(){const b=getSelectedFeaturedBrand();if(!b)return;if(!confirm(`¿Eliminar la marca ${b.nombre}?`))return;state.featuredBrands=state.featuredBrands.filter(x=>String(x.id)!==String(b.id));state.selectedFeaturedBrandId=null;renderFeaturedBrandsAdmin();}
+function renderWorkerBrandPreview(){const track=$("workerBrandTrack");if(!track)return;const brands=[...state.featuredBrands].filter(b=>b.activo!==false).sort((a,b)=>Number(a.orden||0)-Number(b.orden||0)).slice(0,8);track.innerHTML=state.featuredBrandsEnabled&&brands.length?brands.map(b=>brandWorkerCard(b)).join("")+brands.map(b=>brandWorkerCard(b,true)).join(""):"<div class='worker-brand-disabled'>La sección está oculta para trabajadores.</div>";$("featuredBrandsEnabled").checked=state.featuredBrandsEnabled;}
+async function saveFeaturedBrands(){const brands=[...state.featuredBrands].sort((a,b)=>Number(a.orden||0)-Number(b.orden||0));try{if(CONFIG.demoMode){state.featuredBrands=brands;toast("Marcas guardadas en modo demostración.");renderFeaturedBrandsAdmin();return;}await supabaseRequest("marcas_destacadas",{method:"DELETE"});if(brands.length)await supabaseInsert("marcas_destacadas",brands.map(b=>({nombre:b.nombre.trim(),categoria:(b.categoria||"").trim()||null,imagen_url:b.imagen_url||null,orden:Number(b.orden||1),activo:state.featuredBrandsEnabled})));toast("Marcas destacadas guardadas correctamente.");await loadFeaturedBrands();renderFeaturedBrandsAdmin();renderCatalog();}catch(err){console.error(err);toast("No se pudieron guardar las marcas. Ejecuta el SQL incluido en el ZIP en Supabase y vuelve a intentarlo.");}}
+
 function filteredProducts() {
   return state.products.filter(p => {
     const text = `${p.nombre||""} ${p.categoria||""}`.toLowerCase();
@@ -610,7 +695,7 @@ function switchSection(section) {
   document.querySelectorAll(".section").forEach(s=>s.classList.add("hidden"));
   $(`${section}Section`).classList.remove("hidden");
   document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active", b.dataset.section===section));
-  const titles={catalogo:["Catálogo de productos","Consulta precios y presentaciones."],productos:["Gestión de productos","Administra productos, precios y presentaciones."],usuarios:["Gestión de usuarios","Administra las cuentas del sistema."]};
+  const titles={catalogo:["Catálogo de productos","Consulta precios y presentaciones."],productos:["Gestión de productos","Administra productos, precios y presentaciones."],marcas:["Marcas destacadas","Administra las marcas que verán los trabajadores."],usuarios:["Gestión de usuarios","Administra las cuentas del sistema."]};
   $("sectionTitle").textContent=titles[section][0];
   $("sectionSubtitle").textContent=titles[section][1];
   closeMobile();
