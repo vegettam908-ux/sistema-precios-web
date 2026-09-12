@@ -18,15 +18,10 @@
 html,body{width:100%;max-width:100%;overflow-x:hidden!important}
 *,*::before,*::after{box-sizing:border-box}
 </style>
-<style>
-@media (max-width:700px){
-  video{max-width:none!important;}
-}
-</style>
 </head>
 <body>
 
-  <!-- INTRO VIDEO: plays once before revealing the existing login -->
+  <!-- INTRO VIDEO: plays once per browser tab. It returns only after the tab is closed. -->
   <div id="loginIntro" class="login-intro" aria-label="Introducción">
     <video id="loginIntroVideo" class="login-intro-video" autoplay muted playsinline preload="auto">
       <source src="login-intro.mp4" type="video/mp4">
@@ -35,21 +30,6 @@ html,body{width:100%;max-width:100%;overflow-x:hidden!important}
   </div>
 
   <div id="toast" class="toast" aria-live="polite"></div>
-  <div id="accessTransition" class="access-transition hidden" aria-live="polite" aria-busy="true">
-    <div class="access-glow"></div>
-    <div class="access-card">
-      <div class="access-logo-wrap">
-        <div class="access-ring"></div>
-        <img src="logo-inversiones-chahua-login-exacto.png" alt="Inversiones Chahua">
-      </div>
-      <div class="access-kicker">AUTENTICACIÓN COMPLETADA</div>
-      <h2 id="accessTitle">Login exitoso</h2>
-      <p id="accessWelcome">Bienvenido</p>
-      <div class="access-status"><span class="access-spinner"></span><span id="accessStatus">Preparando acceso...</span></div>
-      <div class="access-progress"><span id="accessProgressBar"></span></div><div id="accessPercent" class="access-percent">0%</div>
-    </div>
-  </div>
-
 
   <section id="loginView" class="login-view">
     <div class="login-scene" aria-hidden="true">
@@ -524,16 +504,31 @@ Cielo Tallarín | Fideos | Paquete de 10 kg | Cantidad: 20 | Precio por unidad: 
 
 <script>
 (() => {
+  const INTRO_KEY = 'sistemaPrecios_intro_visto_en_esta_pestana';
   const intro = document.getElementById('loginIntro');
   const video = document.getElementById('loginIntroVideo');
+  const login = document.getElementById('loginView');
   if (!intro || !video) return;
+
+  // sessionStorage vive mientras esta pestaña siga abierta.
+  // Así, volver a Inicio, recargar o navegar dentro del sitio NO repite el video.
+  // Al cerrar la pestaña, el estado deja de estar disponible y el video volverá
+  // a mostrarse cuando el sitio se abra nuevamente.
+  let introAlreadySeen = false;
+  try { introAlreadySeen = sessionStorage.getItem(INTRO_KEY) === '1'; } catch (_) {}
+
+  if (introAlreadySeen) {
+    intro.remove();
+    if (login) login.classList.add('login-reveal');
+    return;
+  }
 
   let finished = false;
   const finishIntro = () => {
     if (finished) return;
     finished = true;
+    try { sessionStorage.setItem(INTRO_KEY, '1'); } catch (_) {}
     // Primero revelamos el login con un efecto cinematográfico; luego retiramos la intro.
-    const login = document.getElementById('loginView');
     if (login) login.classList.add('login-reveal');
     intro.classList.add('login-intro-fade');
     window.setTimeout(() => {
