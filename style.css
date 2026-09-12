@@ -1069,3 +1069,31 @@ body * {
   animation:none !important;
   transition:width .08s linear;
 }
+
+
+/* ===== VIDEO EN FORMATO TELÉFONO ===== */
+.login-bg-video,
+#loginBgVideo,
+.login-video,
+video.login-background {
+  width:100vw !important;
+  height:100dvh !important;
+  min-width:100vw !important;
+  min-height:100dvh !important;
+  max-width:none !important;
+  max-height:none !important;
+  object-fit:cover !important;
+  object-position:center center !important;
+}
+
+@media (max-width: 700px) {
+  html, body { width:100%; min-width:0; overflow:hidden !important; }
+  .login-screen, .login-page, .login-container, .auth-page {
+    width:100vw !important;
+    min-width:0 !important;
+    max-width:none !important;
+    height:100dvh !important;
+    min-height:100dvh !important;
+    overflow:hidden !important;
+  }
+}
