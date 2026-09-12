@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Sistema de Precios">
   <title>Sistema de Precios</title>
-  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="logo-inversiones-chahua.png" type="image/svg+xml">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -14,7 +14,7 @@
   <section id="loginView" class="login-view">
     <div class="login-card">
       <div class="brand brand-center">
-        <img src="assets/logo.svg" alt="Sistema de Precios">
+        <img src="logo-inversiones-chahua.png" alt="Sistema de Precios">
         <div>
           <strong>Sistema de Precios</strong>
           <span>Consulta y gestión de productos</span>
@@ -60,7 +60,7 @@
     <aside class="sidebar">
       <div class="sidebar-top">
         <div class="brand">
-          <img src="assets/logo.svg" alt="">
+          <img src="logo-inversiones-chahua.png" alt="">
           <div>
             <strong>Sistema de Precios</strong>
             <span>Panel web</span>
@@ -72,7 +72,8 @@
       <nav class="nav">
         <button class="nav-item active" data-section="catalogo">▦ <span>Catálogo</span></button>
         <button class="nav-item admin-only" data-section="productos">＋ <span>Productos</span></button>
-        <button class="nav-item admin-only" data-section="marcas">★ <span>Marcas destacadas</span></button>
+        <button class="nav-item admin-only" data-section="catalogos">▤ <span>Categorías</span></button>
+        <button class="nav-item admin-only" data-section="marcas">★ <span>Nuestros aliados</span></button>
         <button class="nav-item admin-only" data-section="usuarios">♙ <span>Usuarios</span></button>
       </nav>
 
@@ -117,10 +118,7 @@
           <div class="hero-art" aria-hidden="true"><span>🧴</span><span>🛒</span><span>📦</span></div>
         </div>
         <div class="breadcrumbs"><span>Inicio</span><b>›</b><span>Categorías</span><b>›</b><strong id="breadcrumbCategory">Todas</strong></div>
-        <div class="brand-strip-wrap">
-          <div class="brand-strip-title">Marcas destacadas</div>
-          <div id="brandStrip" class="brand-strip"></div>
-        </div>
+        <div id="brandStrip" class="brand-strip-wrap allies-catalog-strip" aria-label="Nuestros aliados"></div>
         <div class="toolbar">
           <div class="search-wrap">
             <span>⌕</span>
@@ -166,6 +164,16 @@ Cielo Tallarín | Fideos | Paquete de 10 kg | Cantidad: 20 | Precio por unidad: 
           <button id="generateImportBtn" class="btn btn-primary btn-full" type="button">✦ GENERAR PRODUCTOS</button>
           <div id="importPreview" class="import-preview hidden"></div>
         </div>
+        <div class="admin-product-filters">
+          <div class="admin-product-search">
+            <span class="admin-filter-icon">⌕</span>
+            <input id="adminProductSearch" type="search" placeholder="Buscar producto por nombre, marca o empresa..." autocomplete="off">
+          </div>
+          <select id="adminProductCategory" aria-label="Filtrar productos por categoría">
+            <option value="">Todas las categorías</option>
+          </select>
+          <button id="clearAdminProductFilters" class="small-btn" type="button">↺ LIMPIAR</button><span id="adminProductResultCount" class="admin-product-result-count">0 de 0 productos</span>
+        </div>
         <div class="bulk-toolbar">
           <button id="selectAllProductsBtn" class="small-btn" type="button">☑ SELECCIONAR TODOS</button>
           <button id="deselectProductsBtn" class="small-btn" type="button">□ DESELECCIONAR</button>
@@ -196,29 +204,32 @@ Cielo Tallarín | Fideos | Paquete de 10 kg | Cantidad: 20 | Precio por unidad: 
         </div>
       </section>
 
+      <section id="catalogosSection" class="section hidden"><div class="category-admin-hero"><div class="category-admin-title"><div class="category-title-icon">▰</div><div><h1>Categorías</h1><p>Administra las categorías de productos.</p></div></div><button id="addCatalogBtn" class="category-new-btn" type="button">＋ Nueva categoría</button></div><div class="category-admin-shell"><div id="catalogAdminList" class="catalog-admin-list"></div></div></section>
+
       <section id="marcasSection" class="section hidden">
-        <div class="admin-banner brand-admin-banner"><div><span class="admin-kicker">PANEL ADMINISTRADOR</span><h2>Marcas destacadas</h2><p>Estas marcas se muestran únicamente en el catálogo de trabajadores, en un carrusel automático.</p></div><div class="admin-avatar">★</div></div>
+        <div class="admin-banner brand-admin-banner"><div><span class="admin-kicker">PANEL ADMINISTRADOR</span><h2>Nuestros aliados</h2><p>Empresas que reúnen las marcas y productos disponibles en tu catálogo.</p></div><div class="admin-avatar">★</div></div>
         <div class="brand-admin-toolbar">
-          <div><strong>Administrar marcas</strong><span>Agrega, edita, elimina y ordena los cuadritos que verán los trabajadores.</span></div>
-          <div class="brand-admin-actions"><label class="switch-label"><input id="featuredBrandsEnabled" type="checkbox" checked><span class="switch"></span> Mostrar en catálogo</label><button id="addBrandBtn" class="btn btn-primary" type="button">＋ Agregar marca</button></div>
+          <div><strong>Administrar aliados <span id="allyCountBadge" class="ally-count-badge">27 aliados</span></strong><span>Revisa empresas, logos y el orden en que aparecerán.</span></div>
+          <div class="brand-admin-actions"><label class="switch-label"><input id="featuredBrandsEnabled" type="checkbox" checked><span class="switch"></span> Mostrar en catálogo</label><button id="generateBrandsBtn" class="secondary-btn" type="button">⚡ Revisar empresas detectadas</button><button id="addBrandBtn" class="btn btn-primary" type="button">＋ Agregar empresa</button></div>
         </div>
         <div id="brandAdminGrid" class="brand-admin-grid"></div>
         <div class="brand-editor-card">
-          <div class="brand-editor-head"><div><span class="admin-kicker">EDITOR DE IMAGEN</span><h3 id="brandEditorTitle">Selecciona una marca</h3><p>Sube un logo y usa <strong>Quitar fondo</strong> para dejarlo transparente.</p></div><span class="transparent-badge">PNG transparente recomendado</span></div>
+          <div class="brand-editor-head"><div><span class="admin-kicker">EDITOR DE IMAGEN</span><h3 id="brandEditorTitle">Selecciona una empresa</h3><p>Sube el logo de la empresa y usa <strong>Quitar fondo</strong> para dejarlo transparente.</p></div><span class="transparent-badge">PNG transparente recomendado</span></div>
           <div class="brand-editor-body">
             <div class="brand-image-stage" id="brandImageStage"><div class="brand-image-empty">🖼<span>Selecciona una marca</span></div></div>
             <div class="brand-editor-controls">
-              <div class="field"><label>Nombre de la marca</label><input id="brandNameInput" placeholder="Ej. Marsella"></div>
-              <div class="field"><label>Categoría / enlace</label><input id="brandCategoryInput" placeholder="Ej. Detergentes"></div>
+              <div class="image-folder-tools"><button id="configureImageFolderBtn" class="small-btn" type="button">📁 Configurar carpeta de imágenes</button><span id="imageFolderStatus" class="folder-status">No configurada</span></div>
+              <div class="field"><label>Nombre de la empresa</label><input id="brandNameInput" placeholder="Ej. Nestlé"></div>
+              <div class="field"><label>Tipo</label><input id="brandCategoryInput" value="Empresa" readonly></div>
               <div class="field"><label>Imagen URL (opcional)</label><input id="brandImageUrlInput" placeholder="https://.../logo.png"></div>
-              <div class="brand-editor-buttons"><button id="brandChangeImageBtn" class="small-btn" type="button">▧ Cambiar imagen</button><button id="brandRemoveBgBtn" class="small-btn brand-magic" type="button">✦ Quitar fondo</button><button id="brandRotateBtn" class="small-btn" type="button">↻ Rotar</button><button id="brandDeleteBtn" class="small-btn danger" type="button">▣ Eliminar marca</button></div>
+              <div class="brand-editor-buttons"><button id="brandChangeImageBtn" class="small-btn" type="button">▧ Cambiar imagen</button><button id="brandRemoveBgBtn" class="small-btn brand-magic" type="button">✦ Quitar fondo</button><button id="brandRotateBtn" class="small-btn" type="button">↻ Rotar</button><button id="brandDeleteBtn" class="small-btn danger" type="button">▣ Eliminar empresa</button></div>
               <input id="brandImageFile" type="file" accept="image/png,image/jpeg,image/webp" hidden>
               <div id="brandEditorStatus" class="brand-editor-status">Selecciona una tarjeta para editarla.</div>
             </div>
           </div>
         </div>
-        <div class="brand-worker-preview"><div class="section-head"><div><h3>Vista previa — trabajadores</h3><p class="muted">Así se verá: desplazamiento automático de izquierda a derecha y repetición continua, sin flechas.</p></div></div><div class="worker-brand-strip"><div id="workerBrandTrack" class="worker-brand-track"></div></div></div>
-        <div class="brand-admin-footer"><button id="saveBrandsBtn" class="btn btn-primary" type="button">▣ Guardar cambios</button><span>Los trabajadores verán estos cambios después de guardar.</span></div>
+        <div class="brand-worker-preview"><div class="section-head"><div><h3>Vista previa — trabajadores</h3><p class="muted">Así se verá: logos de empresas, desplazamiento automático y repetición continua, sin flechas.</p></div></div><div class="worker-brand-strip"><div id="workerBrandTrack" class="worker-brand-track"></div></div></div>
+        <div class="brand-admin-footer"><button id="saveBrandsBtn" class="btn btn-primary" type="button">▣ Guardar cambios</button><span>Guarda solo los aliados que hayas modificado. Los demás no se tocan.</span></div>
       </section>
 
       <section id="usuariosSection" class="section hidden">
@@ -249,6 +260,128 @@ Cielo Tallarín | Fideos | Paquete de 10 kg | Cantidad: 20 | Precio por unidad: 
     </main>
   </section>
 
+
+  <div id="productDetailModal" class="modal hidden">
+    <div class="modal-backdrop" data-close-detail></div>
+    <div class="detail-card">
+      <div class="detail-head"><div><span class="admin-kicker">DETALLE DEL PRODUCTO</span><h3 id="detailTitle">Producto</h3></div><button class="icon-btn" type="button" data-close-detail>×</button></div>
+      <div class="detail-layout">
+        <div class="detail-image-box"><img id="detailImage" alt="Producto"><div id="detailImageEmpty">▧<span>Sin imagen</span></div></div>
+        <div class="detail-info">
+          <div class="detail-category" id="detailCategory"></div>
+          <div id="detailType" class="detail-type"></div>
+          <p id="detailDescription" class="detail-description"></p>
+          <div id="detailWater" class="detail-water"></div>
+          <div class="detail-columns">
+            <div class="detail-box"><h4>Características</h4><div id="detailCharacteristics"></div></div>
+            <div class="detail-box"><h4>Recomendaciones</h4><div id="detailRecommendations"></div></div>
+          </div>
+          <div id="detailTip" class="detail-tip"></div>
+          <div id="detailPrices" class="detail-prices" style="display:none"></div>
+          <div id="detailPresentations" class="detail-presentations"></div>
+          <div class="detail-actions"><button id="detailEditBtn" class="btn btn-primary" type="button">✎ Editar</button><button class="btn btn-outline" type="button" data-close-detail>× Cerrar</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="textEditorModal" class="modal hidden">
+    <div class="modal-backdrop" data-close-text-editor></div>
+    <div class="special-editor-shell">
+      <div class="special-editor-card">
+        <input id="detailEditorProductId" type="hidden">
+        <div class="special-editor-head">
+          <div class="special-editor-title">
+            <div class="special-editor-icon">⚙</div>
+            <div><span>EDITAR PRODUCTO</span><h3 id="detailEditorName">Producto</h3><small>Solo administrador</small></div>
+          </div>
+          <button id="closeTextEditorBtn" class="icon-btn" type="button">×</button>
+        </div>
+
+        <div class="special-editor-main">
+          <div class="special-editor-left">
+            <div class="special-product-hero">
+              <div class="special-product-image">
+                <img id="detailEditorImage" alt="Producto">
+                <div id="detailEditorImageEmpty"><span>▧</span><small>Sin imagen</small></div>
+              </div>
+              <div class="special-product-heading">
+                <div id="detailEditorCategory" class="special-category">ARROZ</div>
+                <h2 id="detailEditorNameClone"> </h2>
+                <div id="specialEditorTypeBadge" class="special-type-badge"></div>
+              </div>
+            </div>
+
+            <div class="special-editor-fields">
+              <div class="field">
+                <label>Tipo / clasificación</label>
+                <input id="detailEditorType" placeholder="Ej. Extra Añejo Premium">
+              </div>
+              <div class="field">
+                <label>Descripción completa</label>
+                <textarea id="detailEditorDescription" rows="3" placeholder="Descripción del producto"></textarea>
+              </div>
+              <div class="special-two-fields">
+                <div class="field">
+                  <label>Medida exacta de agua</label>
+                  <input id="detailEditorWater" placeholder="Ej. 1 taza de agua justa">
+                </div>
+                <div class="field">
+                  <label>Características</label>
+                  <textarea id="detailEditorCharacteristics" rows="3" placeholder="Una característica por línea"></textarea>
+                </div>
+              </div>
+              <div class="special-two-fields">
+                <div class="field">
+                  <label>Recomendaciones</label>
+                  <textarea id="detailEditorRecommendations" rows="4" placeholder="Una recomendación por línea"></textarea>
+                </div>
+                <div class="field">
+                  <label>Tip adicional</label>
+                  <textarea id="detailEditorTip" rows="4" placeholder="Consejo adicional"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <section class="detail-editor-pres-panel special-pres-panel">
+              <div class="detail-editor-pres-head">
+                <div><strong>▣ Presentaciones y precios</strong><small>Agrega solamente las presentaciones que ofrece este producto.</small></div>
+                <button id="addDetailPresentationBtn" class="small-btn" type="button">＋ Agregar presentación</button>
+              </div>
+              <div class="detail-editor-pres-labels special-pres-labels"><span>Presentación</span><span>Precio (S/)</span><span>Mercado (S/)</span><span>Público (S/)</span><span>Acciones</span></div>
+              <div id="detailEditorPresentations" class="detail-editor-presentations special-pres-rows"></div>
+              <div class="editor-note">Mercado y Público se habilitan automáticamente solo para 49 kg y 50 kg.</div>
+            </section>
+
+            <div class="special-editor-actions">
+              <button type="button" class="btn btn-outline" onclick="closeTextEditor()">Cancelar</button>
+              <button id="saveTextDetailsBtn" class="btn btn-primary" type="button">▣ Guardar cambios</button>
+            </div>
+          </div>
+
+          <aside class="special-editor-right">
+            <section class="special-side-panel">
+              <div class="special-side-title"><span>◇</span><div><h3>Selector de presentaciones</h3><p>Solo estas opciones están disponibles:</p></div></div>
+              <select class="special-demo-select" aria-label="Opciones de presentación" disabled>
+                <option>3/4 kg</option><option>1 kg</option><option>5 kg</option><option>10 kg</option><option>25 kg</option><option>49 kg</option><option>50 kg</option>
+              </select>
+              <div class="special-option-list">• 3/4 kg<br>• 1 kg<br>• 5 kg<br>• 10 kg<br>• 25 kg<br>• 49 kg<br>• 50 kg</div>
+            </section>
+
+            <section class="special-side-panel">
+              <div class="special-side-title"><span>⚙</span><div><h3>Comportamiento de los precios</h3><p>Los campos cambian según la presentación seleccionada.</p></div></div>
+              <div class="special-rule normal"><b>✓ Presentaciones normales</b><p>3/4, 1, 5, 10 y 25 kg</p><small>Precio habilitado · Mercado y Público bloqueados.</small></div>
+              <div class="special-rule large"><b>✓ 49 kg</b><p>Precio + Mercado + Público</p><small>Al seleccionar 49 kg se habilitan automáticamente los tres precios.</small></div>
+              <div class="special-rule large blue"><b>✓ 50 kg</b><p>Precio + Mercado + Público</p><small>Funciona igual que 49 kg.</small></div>
+              <div class="special-important"><b>ⓘ Importante</b><ul><li>Solo aparecen las presentaciones permitidas.</li><li>Mercado y Público solo se habilitan para 49 kg y 50 kg.</li><li>Al cambiar la presentación, los campos se ajustan automáticamente.</li></ul></div>
+            </section>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="categoryModal" class="modal hidden category-modal"><div class="modal-backdrop"></div><div class="category-modal-card"><div class="category-modal-head"><div class="category-modal-icon">▰</div><div><h3 id="categoryModalTitle">Editar categoría</h3><p>Actualiza la información de la categoría.</p></div><button id="closeCategoryModalBtn" class="icon-btn" type="button">×</button></div><form id="categoryForm" class="category-form"><div class="field"><label for="categoryNameInput">Nombre de la categoría <b>*</b></label><input id="categoryNameInput" required placeholder="Ej. Champú"></div><div class="field"><label>Imagen de la categoría</label><div id="categoryImagePreview" class="category-image-preview"></div><div class="category-image-actions"><label class="category-image-change">▧ Cambiar imagen<input id="categoryImageFile" type="file" accept="image/png,image/jpeg,image/webp" hidden></label><button id="removeCategoryImageBtn" class="category-image-remove" type="button">▣ Eliminar imagen</button></div><div class="category-image-note">La imagen se mostrará en el menú lateral en formato pequeño. Se ajusta automáticamente sin recortarse ni deformarse.</div></div><div class="field"><label for="categoryStatusInput">Estado</label><select id="categoryStatusInput"><option value="true">● Activa</option><option value="false">○ Inactiva</option></select></div><div class="category-modal-actions"><button id="cancelCategoryModalBtn" class="btn btn-outline" type="button">× Cancelar</button><button class="btn btn-primary" type="submit">▣ Guardar cambios</button></div></form></div></div>
   <div id="productModal" class="modal hidden">
     <div class="modal-backdrop" data-close-modal></div>
     <div class="modal-card pro-modal-card">
@@ -267,7 +400,7 @@ Cielo Tallarín | Fideos | Paquete de 10 kg | Cantidad: 20 | Precio por unidad: 
             <div class="panel-heading"><span>✦</span><div><h4>Datos del producto</h4><small>Información principal</small></div></div>
             <div class="field full-field"><label for="pNombre">Nombre del producto <b>*</b></label><input id="pNombre" required placeholder="Nombre del producto"></div>
             <div class="two-fields">
-              <div class="field"><label for="pCategoria">Categoría <b>*</b></label><input id="pCategoria" placeholder="Ej. Fideos"></div>
+              <div class="field"><label for="pCategoria">Categoría <b>*</b></label><select id="pCategoria" required aria-label="Categoría del producto"><option value="">Selecciona una categoría</option></select></div>
               <div class="field"><label for="pUnidad">Precio unidad</label><input id="pUnidad" type="number" step="0.01" min="0" placeholder="Sin precio"></div>
             </div>
             <div class="two-fields">
@@ -282,7 +415,7 @@ Cielo Tallarín | Fideos | Paquete de 10 kg | Cantidad: 20 | Precio por unidad: 
               <div class="image-preview-box pro-image-box"><img id="productImagePreview" alt="Vista previa del producto"><div id="productImageEmpty"><strong>Sin imagen</strong><small>JPG, PNG o WEBP</small></div></div>
               <div class="image-tools pro-image-tools">
                 <input id="pImageFile" type="file" accept="image/png,image/jpeg,image/webp" hidden>
-                <button id="changeImageBtn" class="tool-btn primary" type="button">▧ Cambiar imagen</button>
+                <button id="changeImageBtn" class="tool-btn primary" type="button">▧ Cambiar imagen</button><button id="smartProductImageBtn" class="tool-btn" type="button">📂 Abrir carpeta del producto</button>
                 <button id="removeBgBtn" class="tool-btn" type="button">✦ Quitar fondo claro</button>
                 <button id="cropImageBtn" class="tool-btn" type="button">✂ Recortar</button>
                 <button id="rotateImageBtn" class="tool-btn" type="button">↻ Rotar</button>
