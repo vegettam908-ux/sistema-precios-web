@@ -14,14 +14,54 @@
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="style.css">
+<style data-scroll-fix>
+html,body{width:100%;max-width:100%;overflow-x:hidden!important}
+*,*::before,*::after{box-sizing:border-box}
+</style>
 </head>
 <body>
+
+  <!-- INTRO VIDEO: plays once before revealing the existing login -->
+  <div id="loginIntro" class="login-intro" aria-label="Introducción">
+    <video id="loginIntroVideo" class="login-intro-video" autoplay muted playsinline preload="auto">
+      <source src="login-intro.mp4" type="video/mp4">
+    </video>
+    <div class="login-intro-shade"></div>
+  </div>
+
   <div id="toast" class="toast" aria-live="polite"></div>
+  <div id="accessTransition" class="access-transition hidden" aria-live="polite" aria-busy="true">
+    <div class="access-glow"></div>
+    <div class="access-card">
+      <div class="access-logo-wrap">
+        <div class="access-ring"></div>
+        <img src="logo-inversiones-chahua-login-exacto.png" alt="Inversiones Chahua">
+      </div>
+      <div class="access-kicker">AUTENTICACIÓN COMPLETADA</div>
+      <h2 id="accessTitle">Login exitoso</h2>
+      <p id="accessWelcome">Bienvenido</p>
+      <div class="access-status"><span class="access-spinner"></span><span id="accessStatus">Preparando acceso...</span></div>
+      <div class="access-progress"><span id="accessProgressBar"></span></div><div id="accessPercent" class="access-percent">0%</div>
+    </div>
+  </div>
+
 
   <section id="loginView" class="login-view">
+    <div class="login-scene" aria-hidden="true">
+      <video class="login-bg-video" autoplay muted playsinline loop preload="auto" poster="login-fondo-habitacion-neon.png" aria-hidden="true">
+        <source src="login-fondo-animado.mp4" type="video/mp4">
+      </video>
+      <div class="login-video-overlay"></div>
+      <div class="login-wall login-wall-left"></div>
+      <div class="login-wall login-wall-right"></div>
+      <div class="login-floor"></div>
+</div>
+    </div>
+
     <div class="login-card">
+      <div class="login-neon-frame"></div>
       <div class="brand brand-center">
-        <img src="logo-inversiones-chahua.png" alt="Sistema de Precios">
+        <img src="logo-inversiones-chahua-login-exacto.png" alt="Inversiones Chahua">
         <div>
           <strong>Sistema de Precios</strong>
           <span>Consulta y gestión de productos</span>
@@ -33,13 +73,22 @@
         <p class="muted">Ingresa tus datos para continuar.</p>
 
         <label for="usuario">Usuario</label>
-        <input id="usuario" name="usuario" autocomplete="username" required>
+        <div class="login-input-wrap">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c.7-4 3.2-6 8-6s7.3 2 8 6"/></svg>
+          <input id="usuario" name="usuario" autocomplete="username" placeholder="Usuario" required>
+        </div>
 
         <label for="password">Contraseña</label>
-        <input id="password" name="password" type="password" autocomplete="current-password" required>
+        <div class="login-input-wrap">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          <input id="password" name="password" type="password" autocomplete="current-password" placeholder="Contraseña" required>
+          <span class="login-eye" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M2.5 12s3.4-6 9.5-6 9.5 6 9.5 6-3.4 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg>
+          </span>
+        </div>
 
-        <button class="btn btn-primary btn-full" type="submit">INICIAR SESIÓN</button>
-        <button id="registerToggle" class="btn btn-link btn-full" type="button">¿No tienes cuenta? Regístrate</button>
+        <button class="btn btn-primary btn-full" type="submit">INICIAR SESIÓN <span class="login-arrow">→</span></button>
+        <button id="registerToggle" class="btn btn-link btn-full" type="button">¿No tienes cuenta? <strong>Regístrate</strong></button>
       </form>
 
       <form id="registerForm" class="hidden">
@@ -60,6 +109,10 @@
       </form>
 
       <div id="connectionNotice" class="connection-notice"></div>
+    </div>
+
+    <div class="login-footer" aria-hidden="true">
+      <span><b>♢</b> SEGURO</span><i></i><span><b>✓</b> CONFIABLE</span><i></i><span><b>♡</b> SIEMPRE CONTIGO</span>
     </div>
   </section>
 
@@ -463,5 +516,42 @@ Cielo Tallarín | Fideos | Paquete de 10 kg | Cantidad: 20 | Precio por unidad: 
     });
   }
 </script>
+
+<script>
+(() => {
+  const intro = document.getElementById('loginIntro');
+  const video = document.getElementById('loginIntroVideo');
+  if (!intro || !video) return;
+
+  let finished = false;
+  const finishIntro = () => {
+    if (finished) return;
+    finished = true;
+    // Primero revelamos el login con un efecto cinematográfico; luego retiramos la intro.
+    const login = document.getElementById('loginView');
+    if (login) login.classList.add('login-reveal');
+    intro.classList.add('login-intro-fade');
+    window.setTimeout(() => {
+      intro.remove();
+    }, 1500);
+  };
+
+  video.addEventListener('ended', finishIntro, { once: true });
+  video.addEventListener('error', finishIntro, { once: true });
+
+  // If autoplay is delayed by the browser, try once on the first interaction.
+  const tryPlay = () => video.play().catch(() => {});
+  video.addEventListener('canplay', tryPlay, { once: true });
+  window.addEventListener('pointerdown', tryPlay, { once: true, passive: true });
+
+  // Safety fallback: do not leave the user stuck on the intro.
+  window.setTimeout(() => {
+    if (video.duration && isFinite(video.duration)) {
+      if (video.currentTime >= Math.max(0, video.duration - 0.25)) finishIntro();
+    }
+  }, 12000);
+})();
+</script>
+
 </body>
 </html>

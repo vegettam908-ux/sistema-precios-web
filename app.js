@@ -155,17 +155,48 @@ function showLogin() {
   $("loginView").classList.remove("hidden");
   $("appView").classList.add("hidden");
 }
-function showApp() {
+function showApp(withAccessTransition=false) {
   try { state.customCatalogs = JSON.parse(localStorage.getItem("sp_custom_catalogs") || "[]"); } catch { state.customCatalogs = []; }
-  $("loginView").classList.add("hidden");
-  $("appView").classList.remove("hidden");
-  $("userName").textContent = state.currentUser.nombre || state.currentUser.usuario;
-  $("userRole").textContent = state.currentUser.rol || "Trabajador";
-  $("userInitial").textContent = (state.currentUser.nombre || state.currentUser.usuario || "U").charAt(0).toUpperCase();
-  document.querySelectorAll(".admin-only").forEach(el => { el.style.display = isAdmin() ? "flex" : "none"; });
-  $("appView").classList.toggle("admin-mode", isAdmin());
-  switchSection("catalogo");
-  loadData();
+  const finish = () => {
+    $("loginView").classList.add("hidden");
+    $("appView").classList.remove("hidden");
+    $("userName").textContent = state.currentUser.nombre || state.currentUser.usuario;
+    $("userRole").textContent = state.currentUser.rol || "Trabajador";
+    $("userInitial").textContent = (state.currentUser.nombre || state.currentUser.usuario || "U").charAt(0).toUpperCase();
+    document.querySelectorAll(".admin-only").forEach(el => { el.style.display = isAdmin() ? "flex" : "none"; });
+    $("appView").classList.toggle("admin-mode", isAdmin());
+    switchSection("catalogo");
+    loadData();
+  };
+  if (!withAccessTransition) return finish();
+
+  const overlay=$("accessTransition");
+  const role=isAdmin() ? "Administrador" : "Trabajador";
+  const name=state.currentUser.nombre || state.currentUser.usuario || role;
+  $("accessTitle").textContent = "LOGIN EXITOSO";
+  $("accessWelcome").textContent = "Bienvenido, " + name;
+  $("accessStatus").textContent = role==="Administrador" ? "Accediendo al panel de administrador..." : "Accediendo al sistema...";
+  overlay.classList.remove("hidden","is-closing");
+
+  const bar=$("accessProgressBar") || overlay.querySelector(".access-progress span");
+  const pct=$("accessPercent");
+  if(bar) bar.style.width="0%";
+  if(pct) pct.textContent="0%";
+
+  const started=performance.now();
+  const duration=3000;
+  const tick=()=>{
+    const progress=Math.min(100, Math.round(((performance.now()-started)/duration)*100));
+    if(bar) bar.style.width=progress+"%";
+    if(pct) pct.textContent=progress+"%";
+    if(progress<100) requestAnimationFrame(tick);
+    else {
+      finish();
+      window.setTimeout(() => overlay.classList.add("is-closing"), 120);
+      window.setTimeout(() => overlay.classList.add("hidden"), 850);
+    }
+  };
+  requestAnimationFrame(tick);
 }
 function isAdmin() { return ["admin","administrador"].includes(String(state.currentUser?.rol || "").trim().toLowerCase()); }
 
@@ -182,7 +213,7 @@ async function login(e) {
     state.currentUser = account;
     localStorage.setItem("sp_session", JSON.stringify(account));
     $("password").value = "";
-    showApp();
+    showApp(true);
   } catch (err) {
     console.error(err);
     toast("No se pudo conectar con Supabase. Revisa la configuración y las políticas RLS.");

@@ -1,4 +1,4 @@
-const CACHE = 'sistema-precios-pwa-v1';
+const CACHE = 'sistema-precios-pwa-v2';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -8,7 +8,8 @@ const STATIC_ASSETS = [
   './logo-inversiones-chahua.png',
   './manifest.json',
   './icons/icon-192.png',
-  './icons/icon-512.png'
+  './icons/icon-512.png',
+  './login-intro.mp4'
 ];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(STATIC_ASSETS)).then(() => self.skipWaiting()));
